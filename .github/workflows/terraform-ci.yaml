@@ -47,10 +47,25 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
-      - name: Capture Terraform Output
+      - name: Capture Specific Terraform Output Using jq
         run: |
-          PLAN_OUTPUT=$(terraform output -json)
-          echo "PLAN_OUTPUT=$PLAN_OUTPUT" >> $GITHUB_ENV  # Write full output (careful with large JSON)
+          INSTANCE_ID=$(terraform output -json instance_id | jq -r .value)
+          echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV  # Pass specific output as env var
+
+      - name: Use Terraform Output
+        run: |
+          echo "Terraform output for instance ID: $INSTANCE_ID"
+
+      - name: Capture Full Terraform Output
+        run: |
+          terraform output -json > terraform_output.json
+          echo "Terraform output saved to terraform_output.json"
+      
+      - name: Upload Terraform Output as Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-output
+          path: terraform_output.json
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
