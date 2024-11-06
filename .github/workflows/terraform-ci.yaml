@@ -52,8 +52,5 @@ jobs:
           PLAN_OUTPUT=$(terraform output -json)
           echo "PLAN_OUTPUT=$PLAN_OUTPUT" >> $GITHUB_ENV  # Write full output (careful with large JSON)
 
-      - name: Use Terraform Output
-        run: echo "Terraform output: $PLAN_OUTPUT"
-
       - name: Terraform Apply
         run: terraform apply -auto-approve
