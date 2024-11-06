@@ -1,0 +1,54 @@
+name: Terraform CI/CD
+
+# Define the trigger for the workflow (e.g., on push or pull_request)
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the `main` branch
+  pull_request:
+    branches:
+      - main  # Trigger on pull requests to the `main` branch
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+
+    env:
+      # AWS credentials from GitHub Secrets
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+      # Step 1: Checkout code from the `main` branch
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: 'main'  # Checkout the `main` branch
+
+      # Step 2: Verify AWS Configuration (by listing S3 buckets)
+      - name: Verify AWS Configuration
+        run: aws s3 ls
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Step 3: Verify Terraform Version
+      - name: Verify Terraform Version
+        run: terraform --version
+
+      # Step 4: Terraform Init
+      - name: Terraform Init
+        run: terraform init
+
+      # Step 5: Terraform Validate
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Step 6: Terraform Plan
+      - name: Terraform Plan
+        run: terraform plan
+
+      # Step 7: Terraform Apply (Automatically apply changes)
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
