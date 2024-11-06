@@ -54,8 +54,12 @@ jobs:
 
       # Step 7: Terraform Plan
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
 
-      # Step 8: Terraform Apply (Automatically apply changes)
+      # Step 8: Capture Terraform Output into an Environment Variable
+      - name: Capture Terraform Output
+        run: echo "PLAN_OUTPUT=$(terraform output -json)" >> $GITHUB_ENV
+
+      # Step 10: Terraform Apply (Automatically apply changes)
       - name: Terraform Apply
         run: terraform apply -auto-approve
