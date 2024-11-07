@@ -3,11 +3,14 @@ name: Terraform CI/CD
 on:
   push:
     branches:
-      - main  # Trigger on pushes to the `main` branch
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -17,12 +20,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Verify AWS Configuration
-        run: aws s3 ls --debug
-
-      - name: Verify Terraform Version
-        run: terraform --version
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
@@ -42,15 +39,25 @@ jobs:
         run: terraform apply -auto-approve
 
       - name: Debug Terraform Output
-        run: terraform output -json  # Debugging step to check raw Terraform output
-
-      - name: Capture Terraform Output for 'instance_public_ip'
         run: |
-          echo "Terraform output (raw):"
-          terraform output -json  # Print raw output for debugging
+          echo "Raw Terraform output (JSON format):"
+          terraform output -json
+          
+      - name: Extract the Public IP
+        run: |
+          # Ensure the terraform output contains the value and parse it correctly
           echo "Extracting the public IP..."
-          INSTANCE_PUBLIC_IP=$(terraform output -json instance_public_ip | jq -r '.value // "default_value"')  # Default if null
-          echo "Captured IP: $INSTANCE_PUBLIC_IP"
-          echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_ENV  # Write to GitHub environment variable
+          OUTPUT=$(terraform output -json instance_public_ip)
+          echo "Raw output for instance_public_ip: $OUTPUT"
 
+          # Check if jq is working and parse correctly
+          INSTANCE_PUBLIC_IP=$(echo $OUTPUT | jq -r '.value')
+          echo "Captured Public IP: $INSTANCE_PUBLIC_IP"
+
+          # Write it to GitHub Actions environment variable
+          echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_ENV
+
+      - name: Use Terraform Output
+        run: |
+          echo "Captured Public IP from Terraform: ${{ env.instance_public_ip }}"
 
