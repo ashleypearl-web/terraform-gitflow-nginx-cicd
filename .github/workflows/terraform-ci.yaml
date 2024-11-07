@@ -3,14 +3,11 @@ name: Terraform CI/CD
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - main  # Trigger on pushes to the `main` branch
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -18,60 +15,42 @@ jobs:
       AWS_DEFAULT_REGION: 'us-east-1'
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Verify AWS Configuration
       - name: Verify AWS Configuration
         run: aws s3 ls --debug
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: 'us-east-1'
 
-      # Step 3: Verify Terraform Version
       - name: Verify Terraform Version
         run: terraform --version
 
-      # Step 4: Set up Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: '1.3.0'
 
-      # Step 5: Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # Step 6: Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # Step 7: Terraform Plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan
 
-      # Step 8: Terraform Apply
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-      # Step 9: Capture Terraform Output Safely
-      - name: Capture Terraform Output
-        id: capture_output
-        run: |
-          # Capture the output for 'instance_public_ip'
-          INSTANCE_PUBLIC_IP=$(terraform output -json instance_public_ip | jq -r .value)
-          echo "instance_public_ip=${INSTANCE_PUBLIC_IP}" >> $GITHUB_ENV  # Set the output to GitHub environment
+      - name: Debug Terraform Output
+        run: terraform output -json  # Debugging step to check raw Terraform output
 
-      # Step 10: Use Terraform Output (for demonstration)
-      - name: Use Terraform Output
+      - name: Capture Terraform Output for 'instance_public_ip'
         run: |
-          echo "The public IP address of the instance is: ${{ env.instance_public_ip }}"
+          echo "Terraform output (raw):"
+          terraform output -json  # Print raw output for debugging
+          echo "Extracting the public IP..."
+          INSTANCE_PUBLIC_IP=$(terraform output -json instance_public_ip | jq -r '.value // "default_value"')  # Default if null
+          echo "Captured IP: $INSTANCE_PUBLIC_IP"
+          echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_ENV  # Write to GitHub environment variable
 
-      # Step 11: Upload Terraform Output as Artifact
-      - name: Upload Terraform Output as Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: terraform-output
-          path: terraform_output.txt
+
