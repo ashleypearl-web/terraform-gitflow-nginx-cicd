@@ -56,24 +56,22 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-      # Step 9: Capture Terraform Output and Write to File
+      # Step 9: Capture Terraform Output Safely
       - name: Capture Terraform Output
+        id: capture_output
         run: |
           # Capture the output for 'instance_public_ip'
           INSTANCE_PUBLIC_IP=$(terraform output -json instance_public_ip | jq -r .value)
-          
-          # Ensure the output is captured and write it to a file
-          echo "instance_public_ip=$INSTANCE_PUBLIC_IP" > terraform_output.txt
-          echo "Terraform output written to terraform_output.txt"
-          
-      # Step 10: Upload Terraform Output as Artifact
+          echo "instance_public_ip=${INSTANCE_PUBLIC_IP}" >> $GITHUB_ENV  # Set the output to GitHub environment
+
+      # Step 10: Use Terraform Output (for demonstration)
+      - name: Use Terraform Output
+        run: |
+          echo "The public IP address of the instance is: ${{ env.instance_public_ip }}"
+
+      # Step 11: Upload Terraform Output as Artifact
       - name: Upload Terraform Output as Artifact
         uses: actions/upload-artifact@v3
         with:
           name: terraform-output
           path: terraform_output.txt
-
-      # Step 11: Use Terraform Output (for demonstration)
-      - name: Use Terraform Output
-        run: |
-          echo "The public IP address of the instance is: $INSTANCE_PUBLIC_IP"
