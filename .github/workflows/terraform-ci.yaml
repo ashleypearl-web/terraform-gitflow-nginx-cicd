@@ -45,13 +45,21 @@ jobs:
           
       - name: Extract the Public IP
         run: |
-          # Ensure the terraform output contains the value and parse it correctly
+          # Capture the terraform output for 'instance_public_ip'
           echo "Extracting the public IP..."
-          OUTPUT=$(terraform output -json instance_public_ip)
-          echo "Raw output for instance_public_ip: $OUTPUT"
 
-          # Check if jq is working and parse correctly
-          INSTANCE_PUBLIC_IP=$(echo $OUTPUT | jq -r '.value')
+          # Get the raw output from Terraform for the specific variable
+          OUTPUT=$(terraform output -json instance_public_ip)
+          echo "Raw output for instance_public_ip: '$OUTPUT'"
+
+          # Sanitize the output by trimming any surrounding spaces or newline characters
+          CLEANED_OUTPUT=$(echo $OUTPUT | sed 's/^[ \t]*//;s/[ \t]*$//' | tr -d '\n')
+          echo "Cleaned output: '$CLEANED_OUTPUT'"
+
+          # Check if jq is working and parse correctly, extracting the value
+          INSTANCE_PUBLIC_IP=$(echo $CLEANED_OUTPUT | jq -r '.value')
+
+          # Debug the captured IP to confirm it's correct
           echo "Captured Public IP: $INSTANCE_PUBLIC_IP"
 
           # Write it to GitHub Actions environment variable
@@ -60,4 +68,3 @@ jobs:
       - name: Use Terraform Output
         run: |
           echo "Captured Public IP from Terraform: ${{ env.instance_public_ip }}"
-
