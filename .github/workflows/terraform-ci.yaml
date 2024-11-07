@@ -52,13 +52,13 @@ jobs:
           OUTPUT=$(terraform output -json instance_public_ip)
           echo "Raw output for instance_public_ip: $OUTPUT"
 
-          # Clean the output by stripping unnecessary spaces or characters
-          INSTANCE_PUBLIC_IP=$(echo $OUTPUT | jq -r '.value')
-          
+          # Remove any surrounding quotes and assign the value directly
+          INSTANCE_PUBLIC_IP=$(echo $OUTPUT | tr -d '"')  # Strip the quotes
+
           # Debug the captured IP to confirm it's correct
           echo "Captured Public IP: $INSTANCE_PUBLIC_IP"
           
-          # Write it to GitHub Actions environment variable
+          # Write the value to GitHub Actions environment variable
           echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Use Terraform Output
