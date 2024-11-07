@@ -52,12 +52,15 @@ jobs:
           OUTPUT=$(terraform output -json instance_public_ip)
           echo "Raw output for instance_public_ip: '$OUTPUT'"
 
-          # Sanitize the output by trimming any surrounding spaces or newline characters
-          CLEANED_OUTPUT=$(echo $OUTPUT | sed 's/^[ \t]*//;s/[ \t]*$//' | tr -d '\n')
+          # Clean the output by stripping debug info or unwanted characters
+          CLEANED_OUTPUT=$(echo $OUTPUT | sed -E 's/^[[:space:]]*|[[:space:]]*$//g' | tr -d '\n')
           echo "Cleaned output: '$CLEANED_OUTPUT'"
 
-          # Check if jq is working and parse correctly, extracting the value
-          INSTANCE_PUBLIC_IP=$(echo $CLEANED_OUTPUT | jq -r '.value')
+          # Ensure the value is wrapped in a JSON format for jq to work
+          CLEANED_JSON=$(echo $CLEANED_OUTPUT | sed 's/^\(.*\)$/{"value": "\1"}/')
+
+          # Check if jq is working and parse the value correctly
+          INSTANCE_PUBLIC_IP=$(echo $CLEANED_JSON | jq -r '.value')
 
           # Debug the captured IP to confirm it's correct
           echo "Captured Public IP: $INSTANCE_PUBLIC_IP"

@@ -1,3 +1,4 @@
 output "instance_public_ip" {
-  value = aws_instance.dove-inst.public_ip
+  value     = aws_instance.example.public_ip
+  sensitive = false
 }
